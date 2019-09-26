@@ -19,21 +19,31 @@ class Zeppelin(object):
     pass
 
 class GameWorld(object):
-    pass
+    def __init__(self):
+        self.game_time_s = 0
+
+    def update(self, delta_t):
+        self.game_time_s += delta_t
+
+    def format_time(self, time_s=None):
+        if time_s is None:
+            time_s = self.game_time_s
+        return '%02d:%02d' % (time_s // 60, time_s % 60)
 
 class PygameUserInterface(object):
     def __init__(self):
         self.game_exit = False
         self.surface = pygame.display.get_surface()
         self.clock = pygame.time.Clock() # https://www.pygame.org/docs/ref/time.html
+        self.desired_fps = 30
         self.font = pygame.font.Font(None, 30) # https://www.pygame.org/docs/ref/font.html
+        self.game_world = GameWorld()
 
         # demo stuff
         self.desired_color = (0, 0, 0)
         self.keys_letter = [0, 0]
         self.mouse_letter = [0, 0] # drag letter with cursor TODO-1 
         #self.enemy = Enemy()
-     
 
     def frame_events(self):
         for event in pygame.event.get():
@@ -61,15 +71,26 @@ class PygameUserInterface(object):
         #     stuff_when_q_pressed_and_held()
 
     def frame_logic(self):
-        pass
+        self.game_world.update(1/self.desired_fps)
 
     def frame_graphics(self):
         self.surface.fill(self.desired_color)
+        max_row, max_column = self.surface.get_size()
         letter_surface = self.font.render('L', True, (255, 255, 255))
         # https://www.pygame.org/docs/ref/surface.html
         self.surface.blit(letter_surface, self.keys_letter)
         mouse_surface = self.font.render('M', True, (255, 255, 255))
         self.surface.blit(mouse_surface, self.mouse_letter)
+
+        # draw map objects
+
+        # draw overlaid text
+        time_surface = self.font.render(self.game_world.format_time(),
+                                        True,
+                                        (255, 255, 255))
+        self.surface.blit(time_surface, (max_row/2 - time_surface.get_width()/2,
+                                         max_column/2 - time_surface.get_height()/2))
+
         pygame.display.flip()
 
     def main_loop(self):
@@ -77,7 +98,7 @@ class PygameUserInterface(object):
             self.frame_events()
             self.frame_logic()
             self.frame_graphics()
-            self.clock.tick(30)
+            self.clock.tick(self.desired_fps)
 
 def main():
     pygame.init()
